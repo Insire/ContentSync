@@ -13,13 +13,13 @@ namespace GuiLabs.FileUtilities
         public string Pattern { get; set; } = "*";
         public bool Nonrecursive { get; set; }
 
-        public bool CopyLeftOnlyFiles { get; private set; } = true;
-        public bool UpdateChangedFiles { get; private set; } = true;
-        public bool DeleteRightOnlyFiles { get; private set; } = true;
-        public bool CopyEmptyDirectories { get; private set; } = true;
-        public bool DeleteRightOnlyDirectories { get; private set; } = true;
-        public bool DeleteSameFiles { get; private set; }
-        public bool DeleteChangedFiles { get; private set; }
+        public bool CopyLeftOnlyFiles { get; set; } = true;
+        public bool UpdateChangedFiles { get; set; } = true;
+        public bool DeleteRightOnlyFiles { get; set; } = true;
+        public bool CopyEmptyDirectories { get; set; } = true;
+        public bool DeleteRightOnlyDirectories { get; set; } = true;
+        public bool DeleteSameFiles { get; set; }
+        public bool DeleteChangedFiles { get; set; }
         public bool WhatIf { get; set; }
         public bool Quiet { get; set; }
         public bool Help { get; set; }
@@ -73,21 +73,26 @@ namespace GuiLabs.FileUtilities
                         case "c":
                             CopyLeftOnlyFiles = true;
                             break;
+
                         case "u":
                             UpdateChangedFiles = true;
                             break;
+
                         case "cu":
                         case "uc":
                             CopyLeftOnlyFiles = true;
                             UpdateChangedFiles = true;
                             break;
+
                         case "d":
                             DeleteRightOnlyFiles = true;
                             break;
+
                         case "cd":
                             CopyLeftOnlyFiles = true;
                             DeleteRightOnlyFiles = true;
                             break;
+
                         case "cud":
                         case "cdu":
                         case "duc":
@@ -98,30 +103,37 @@ namespace GuiLabs.FileUtilities
                             UpdateChangedFiles = true;
                             DeleteRightOnlyFiles = true;
                             break;
+
                         case "ud":
                         case "du":
                             UpdateChangedFiles = true;
                             DeleteRightOnlyFiles = true;
                             break;
+
                         case "ds":
                             DeleteSameFiles = true;
                             break;
+
                         case "dc":
                             DeleteChangedFiles = true;
                             break;
+
                         case "n":
                             Nonrecursive = true;
                             break;
+
                         case "q":
                             Quiet = true;
                             Log.Quiet = true;
                             break;
+
                         case "h":
                         case "help":
                         case "?":
                             Help = true;
                             Error = "Help argument cannot be combined with any other arguments";
                             return;
+
                         case "whatif":
                             WhatIf = true;
                             if (switches.Count == 1)
@@ -135,6 +147,7 @@ namespace GuiLabs.FileUtilities
                             }
 
                             break;
+
                         default:
                             Error += "Unrecognized argument: " + key + Environment.NewLine;
                             return;
