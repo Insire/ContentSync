@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FS.Sync;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,12 +18,13 @@ namespace GuiLabs.FileUtilities
             string leftRoot,
             string rightRoot,
             string pattern,
+            Log log,
             bool recursive = true,
             bool compareContents = true)
         {
             HashSet<string> leftRelativePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             HashSet<string> leftOnlyFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            using (Log.MeasureTime("Scanning source directory"))
+            using (log.MeasureTime("Scanning source directory"))
             {
                 GetRelativePathsOfAllFiles(leftRoot, pattern, recursive, leftRelativePaths, leftOnlyFolders);
             }
@@ -31,7 +33,7 @@ namespace GuiLabs.FileUtilities
             HashSet<string> rightOnlyFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (Directory.Exists(rightRoot))
             {
-                using (Log.MeasureTime("Scanning destination directory"))
+                using (log.MeasureTime("Scanning destination directory"))
                 {
                     GetRelativePathsOfAllFiles(rightRoot, pattern, recursive, rightRelativePaths, rightOnlyFolders);
                 }
@@ -49,7 +51,7 @@ namespace GuiLabs.FileUtilities
             int current = 0;
             int total = leftRelativePaths.Count;
 
-            using (Log.MeasureTime("Comparing"))
+            using (log.MeasureTime("Comparing"))
             {
                 Parallel.ForEach(
                     leftRelativePaths,
@@ -69,7 +71,7 @@ namespace GuiLabs.FileUtilities
                             }
                             catch (Exception ex)
                             {
-                                Log.WriteError(ex.ToString());
+                                log.WriteError(ex.ToString());
                                 return;
                             }
 
@@ -105,7 +107,7 @@ namespace GuiLabs.FileUtilities
                     });
             }
 
-            using (Log.MeasureTime("Sorting"))
+            using (log.MeasureTime("Sorting"))
             {
                 leftOnlyFiles.Sort();
                 identicalFiles.Sort();

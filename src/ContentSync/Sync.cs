@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FS.Sync;
+using System;
 using System.IO;
 using System.Linq;
 using static GuiLabs.Common.Utilities;
@@ -10,11 +11,11 @@ namespace GuiLabs.FileUtilities
         /// <summary>
         /// Assumes source directory exists. destination may or may not exist.
         /// </summary>
-        public static void Directories(string source, string destination, Arguments arguments)
+        public static void Directories(string source, string destination, Arguments arguments, Log log)
         {
             if (!Directory.Exists(destination))
             {
-                FileSystem.CreateDirectory(destination, arguments.WhatIf);
+                FileSystem.CreateDirectory(destination, arguments.WhatIf, log);
             }
 
             source = Paths.TrimSeparator(source);
@@ -24,6 +25,7 @@ namespace GuiLabs.FileUtilities
                 source,
                 destination,
                 arguments.Pattern,
+                log,
                 recursive: !arguments.Nonrecursive,
                 compareContents:
                     arguments.UpdateChangedFiles ||
@@ -38,12 +40,12 @@ namespace GuiLabs.FileUtilities
 
             if (arguments.CopyLeftOnlyFiles)
             {
-                using (Log.MeasureTime("Copying new files"))
+                using (log.MeasureTime("Copying new files"))
                 {
                     foreach (var leftOnly in diff.LeftOnlyFiles)
                     {
                         var destinationFilePath = destination + leftOnly;
-                        if (!FileSystem.CopyFile(source + leftOnly, destinationFilePath, arguments.WhatIf))
+                        if (!FileSystem.CopyFile(source + leftOnly, destinationFilePath, arguments.WhatIf, log))
                         {
                             filesFailedToCopy++;
                         }
@@ -55,12 +57,12 @@ namespace GuiLabs.FileUtilities
 
             if (arguments.UpdateChangedFiles)
             {
-                using (Log.MeasureTime("Updating changed files"))
+                using (log.MeasureTime("Updating changed files"))
                 {
                     foreach (var changed in diff.ChangedFiles)
                     {
                         var destinationFilePath = destination + changed;
-                        if (!FileSystem.CopyFile(source + changed, destinationFilePath, arguments.WhatIf))
+                        if (!FileSystem.CopyFile(source + changed, destinationFilePath, arguments.WhatIf, log))
                         {
                             filesFailedToCopy++;
                         }
@@ -71,12 +73,12 @@ namespace GuiLabs.FileUtilities
             }
             else if (arguments.DeleteChangedFiles)
             {
-                using (Log.MeasureTime("Deleting changed files"))
+                using (log.MeasureTime("Deleting changed files"))
                 {
                     foreach (var changed in diff.ChangedFiles)
                     {
                         var destinationFilePath = destination + changed;
-                        if (!FileSystem.DeleteFile(destinationFilePath, arguments.WhatIf))
+                        if (!FileSystem.DeleteFile(destinationFilePath, arguments.WhatIf, log))
                         {
                             filesFailedToDelete++;
                         }
@@ -88,12 +90,12 @@ namespace GuiLabs.FileUtilities
 
             if (arguments.DeleteSameFiles)
             {
-                using (Log.MeasureTime("Deleting identical files"))
+                using (log.MeasureTime("Deleting identical files"))
                 {
                     foreach (var same in diff.IdenticalFiles)
                     {
                         var destinationFilePath = destination + same;
-                        if (!FileSystem.DeleteFile(destinationFilePath, arguments.WhatIf))
+                        if (!FileSystem.DeleteFile(destinationFilePath, arguments.WhatIf, log))
                         {
                             filesFailedToDelete++;
                         }
@@ -105,12 +107,12 @@ namespace GuiLabs.FileUtilities
 
             if (arguments.DeleteRightOnlyFiles)
             {
-                using (Log.MeasureTime("Deleting extra files"))
+                using (log.MeasureTime("Deleting extra files"))
                 {
                     foreach (var rightOnly in diff.RightOnlyFiles)
                     {
                         var deletedFilePath = destination + rightOnly;
-                        if (!FileSystem.DeleteFile(deletedFilePath, arguments.WhatIf))
+                        if (!FileSystem.DeleteFile(deletedFilePath, arguments.WhatIf, log))
                         {
                             filesFailedToDelete++;
                         }
@@ -123,14 +125,14 @@ namespace GuiLabs.FileUtilities
             int foldersCreated = 0;
             if (arguments.CopyEmptyDirectories)
             {
-                using (Log.MeasureTime("Creating folders"))
+                using (log.MeasureTime("Creating folders"))
                 {
                     foreach (var leftOnlyFolder in diff.LeftOnlyFolders)
                     {
                         var newFolder = destination + leftOnlyFolder;
                         if (!Directory.Exists(newFolder))
                         {
-                            if (!FileSystem.CreateDirectory(newFolder, arguments.WhatIf))
+                            if (!FileSystem.CreateDirectory(newFolder, arguments.WhatIf, log))
                             {
                                 foldersFailedToCreate++;
                             }
@@ -148,14 +150,14 @@ namespace GuiLabs.FileUtilities
             int foldersDeleted = 0;
             if (arguments.DeleteRightOnlyDirectories)
             {
-                using (Log.MeasureTime("Deleting folders"))
+                using (log.MeasureTime("Deleting folders"))
                 {
                     foreach (var rightOnlyFolder in diff.RightOnlyFolders)
                     {
                         var deletedFolderPath = destination + rightOnlyFolder;
                         if (Directory.Exists(deletedFolderPath))
                         {
-                            if (!FileSystem.DeleteDirectory(deletedFolderPath, arguments.WhatIf))
+                            if (!FileSystem.DeleteDirectory(deletedFolderPath, arguments.WhatIf, log))
                             {
                                 foldersFailedToDelete++;
                             }
@@ -176,11 +178,11 @@ namespace GuiLabs.FileUtilities
                 var fileOrFiles = Pluralize("file", count);
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine($"Would have copied {count} new {fileOrFiles}", ConsoleColor.Green);
+                    log.WriteLine($"Would have copied {count} new {fileOrFiles}", ConsoleColor.Green);
                 }
                 else
                 {
-                    Log.WriteLine($"{count} new {fileOrFiles} copied", ConsoleColor.Green);
+                    log.WriteLine($"{count} new {fileOrFiles} copied", ConsoleColor.Green);
                 }
             }
 
@@ -189,11 +191,11 @@ namespace GuiLabs.FileUtilities
                 var folderOrFolders = Pluralize("folder", foldersCreated);
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine($"Would have created {foldersCreated} {folderOrFolders}", ConsoleColor.Green);
+                    log.WriteLine($"Would have created {foldersCreated} {folderOrFolders}", ConsoleColor.Green);
                 }
                 else
                 {
-                    Log.WriteLine($"{foldersCreated} {folderOrFolders} created", ConsoleColor.Green);
+                    log.WriteLine($"{foldersCreated} {folderOrFolders} created", ConsoleColor.Green);
                 }
             }
 
@@ -203,11 +205,11 @@ namespace GuiLabs.FileUtilities
                 var fileOrFiles = Pluralize("file", count);
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine($"Would have updated {count} changed {fileOrFiles}", ConsoleColor.Yellow);
+                    log.WriteLine($"Would have updated {count} changed {fileOrFiles}", ConsoleColor.Yellow);
                 }
                 else
                 {
-                    Log.WriteLine($"{count} changed {fileOrFiles} updated", ConsoleColor.Yellow);
+                    log.WriteLine($"{count} changed {fileOrFiles} updated", ConsoleColor.Yellow);
                 }
             }
 
@@ -217,11 +219,11 @@ namespace GuiLabs.FileUtilities
                 var fileOrFiles = Pluralize("file", count);
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine($"Would have deleted {count} changed {fileOrFiles}", ConsoleColor.Yellow);
+                    log.WriteLine($"Would have deleted {count} changed {fileOrFiles}", ConsoleColor.Yellow);
                 }
                 else
                 {
-                    Log.WriteLine($"{count} changed {fileOrFiles} deleted", ConsoleColor.Yellow);
+                    log.WriteLine($"{count} changed {fileOrFiles} deleted", ConsoleColor.Yellow);
                 }
             }
 
@@ -231,11 +233,11 @@ namespace GuiLabs.FileUtilities
                 var fileOrFiles = Pluralize("file", count);
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine($"Would have deleted {count} right-only {fileOrFiles}", ConsoleColor.Red);
+                    log.WriteLine($"Would have deleted {count} right-only {fileOrFiles}", ConsoleColor.Red);
                 }
                 else
                 {
-                    Log.WriteLine($"{count} right-only {fileOrFiles} deleted", ConsoleColor.Red);
+                    log.WriteLine($"{count} right-only {fileOrFiles} deleted", ConsoleColor.Red);
                 }
             }
 
@@ -244,11 +246,11 @@ namespace GuiLabs.FileUtilities
                 var folderOrFolders = Pluralize("folder", foldersDeleted);
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine($"Would have deleted {foldersDeleted} right-only {folderOrFolders}", ConsoleColor.Red);
+                    log.WriteLine($"Would have deleted {foldersDeleted} right-only {folderOrFolders}", ConsoleColor.Red);
                 }
                 else
                 {
-                    Log.WriteLine($"{foldersDeleted} right-only {folderOrFolders} deleted", ConsoleColor.Red);
+                    log.WriteLine($"{foldersDeleted} right-only {folderOrFolders} deleted", ConsoleColor.Red);
                 }
             }
 
@@ -260,48 +262,48 @@ namespace GuiLabs.FileUtilities
                 {
                     if (arguments.WhatIf)
                     {
-                        Log.WriteLine($"Would have deleted {count} identical {fileOrFiles} from destination", ConsoleColor.White);
+                        log.WriteLine($"Would have deleted {count} identical {fileOrFiles} from destination", ConsoleColor.White);
                     }
                     else
                     {
-                        Log.WriteLine($"{count} identical {fileOrFiles} deleted from destination", ConsoleColor.White);
+                        log.WriteLine($"{count} identical {fileOrFiles} deleted from destination", ConsoleColor.White);
                     }
                 }
                 else
                 {
-                    Log.WriteLine($"{count} identical {fileOrFiles}", ConsoleColor.White);
+                    log.WriteLine($"{count} identical {fileOrFiles}", ConsoleColor.White);
                 }
             }
 
             if (filesFailedToCopy > 0)
             {
-                Log.WriteLine($"Failed to copy {filesFailedToCopy} {Pluralize("file", filesFailedToCopy)}", ConsoleColor.Red);
+                log.WriteLine($"Failed to copy {filesFailedToCopy} {Pluralize("file", filesFailedToCopy)}", ConsoleColor.Red);
             }
 
             if (filesFailedToDelete > 0)
             {
-                Log.WriteLine($"Failed to delete {filesFailedToDelete} {Pluralize("file", filesFailedToDelete)}.", ConsoleColor.Red);
+                log.WriteLine($"Failed to delete {filesFailedToDelete} {Pluralize("file", filesFailedToDelete)}.", ConsoleColor.Red);
             }
 
             if (foldersFailedToCreate > 0)
             {
-                Log.WriteLine($"Failed to create {foldersFailedToCreate} {Pluralize("folder", foldersFailedToCreate)}.", ConsoleColor.Red);
+                log.WriteLine($"Failed to create {foldersFailedToCreate} {Pluralize("folder", foldersFailedToCreate)}.", ConsoleColor.Red);
             }
 
             if (foldersFailedToDelete > 0)
             {
-                Log.WriteLine($"Failed to delete {foldersFailedToDelete} {Pluralize("folder", foldersFailedToDelete)}.", ConsoleColor.Red);
+                log.WriteLine($"Failed to delete {foldersFailedToDelete} {Pluralize("folder", foldersFailedToDelete)}.", ConsoleColor.Red);
             }
 
             if (!changesMade)
             {
                 if (arguments.WhatIf)
                 {
-                    Log.WriteLine("Would have made no changes.", ConsoleColor.White);
+                    log.WriteLine("Would have made no changes.", ConsoleColor.White);
                 }
                 else
                 {
-                    Log.WriteLine("Made no changes.", ConsoleColor.White);
+                    log.WriteLine("Made no changes.", ConsoleColor.White);
                 }
             }
 
@@ -323,15 +325,15 @@ namespace GuiLabs.FileUtilities
         /// If it exists and is different, it is overwritten.
         /// If it doesn't exist, source is copied.
         /// </summary>
-        public static void Files(string source, string destination, Arguments arguments)
+        public static void Files(string source, string destination, Arguments arguments, Log log)
         {
             if (File.Exists(destination) && FileUtilities.Files.AreContentsIdentical(source, destination))
             {
-                Log.WriteLine("File contents are identical.", ConsoleColor.White);
+                log.WriteLine("File contents are identical.", ConsoleColor.White);
                 return;
             }
 
-            FileSystem.CopyFile(source, destination, arguments.WhatIf);
+            FileSystem.CopyFile(source, destination, arguments.WhatIf, log);
         }
     }
 }
