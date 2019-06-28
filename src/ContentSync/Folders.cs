@@ -91,7 +91,7 @@ namespace GuiLabs.FileUtilities
                     try
                     {
                         areSame = !compareContents
-                        || Files.AreContentsIdentical(leftFullPath, rightFullPath)
+                        || Files.AreContentsIdentical(leftFullPath, rightFullPath, token)
                         || respectDate
                             ? File.GetLastWriteTimeUtc(leftFullPath) <= File.GetLastWriteTimeUtc(rightFullPath)
                             : true;

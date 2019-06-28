@@ -48,6 +48,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var leftOnly in diff.LeftOnlyFiles)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var destinationFilePath = destination + leftOnly;
                         if (!FileSystem.CopyFile(source + leftOnly, destinationFilePath, arguments.WhatIf, log))
                         {
@@ -65,6 +68,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var changed in diff.ChangedFiles)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var destinationFilePath = destination + changed;
                         if (!FileSystem.CopyFile(source + changed, destinationFilePath, arguments.WhatIf, log))
                         {
@@ -81,6 +87,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var changed in diff.ChangedFiles)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var destinationFilePath = destination + changed;
                         if (!FileSystem.DeleteFile(destinationFilePath, arguments.WhatIf, log))
                         {
@@ -98,6 +107,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var same in diff.IdenticalFiles)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var destinationFilePath = destination + same;
                         if (!FileSystem.DeleteFile(destinationFilePath, arguments.WhatIf, log))
                         {
@@ -115,6 +127,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var rightOnly in diff.RightOnlyFiles)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var deletedFilePath = destination + rightOnly;
                         if (!FileSystem.DeleteFile(deletedFilePath, arguments.WhatIf, log))
                         {
@@ -133,6 +148,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var leftOnlyFolder in diff.LeftOnlyFolders)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var newFolder = destination + leftOnlyFolder;
                         if (!Directory.Exists(newFolder))
                         {
@@ -158,6 +176,9 @@ namespace GuiLabs.FileUtilities
                 {
                     foreach (var rightOnlyFolder in diff.RightOnlyFolders)
                     {
+                        if (token.IsCancellationRequested)
+                            break;
+
                         var deletedFolderPath = destination + rightOnlyFolder;
                         if (Directory.Exists(deletedFolderPath))
                         {
@@ -331,9 +352,9 @@ namespace GuiLabs.FileUtilities
         /// If it exists and is different, it is overwritten.
         /// If it doesn't exist, source is copied.
         /// </summary>
-        public static void Files(string source, string destination, Arguments arguments, Log log)
+        public static void Files(string source, string destination, Arguments arguments, Log log, CancellationToken token)
         {
-            if (File.Exists(destination) && FileUtilities.Files.AreContentsIdentical(source, destination))
+            if (File.Exists(destination) && FileUtilities.Files.AreContentsIdentical(source, destination, token))
             {
                 log.WriteLine("File contents are identical.", ConsoleColor.White);
                 return;

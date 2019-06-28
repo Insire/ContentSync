@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Threading;
 
 namespace GuiLabs.FileUtilities
 {
@@ -9,7 +10,7 @@ namespace GuiLabs.FileUtilities
         /// <summary>
         /// Assumes both files already exist.
         /// </summary>
-        public static bool AreContentsIdentical(string filePath1, string filePath2)
+        public static bool AreContentsIdentical(string filePath1, string filePath2, CancellationToken token)
         {
             var fileInfo1 = new FileInfo(filePath1);
             var fileInfo2 = new FileInfo(filePath2);
@@ -28,6 +29,9 @@ namespace GuiLabs.FileUtilities
             {
                 while (stream1.Position < stream1.Length)
                 {
+                    if (token.IsCancellationRequested)
+                        break;
+
                     int bytesRead1 = stream1.Read(buffer1, 0, bufferSize);
                     int bytesRead2 = stream2.Read(buffer2, 0, bufferSize);
                     if (bytesRead1 != bytesRead2)
