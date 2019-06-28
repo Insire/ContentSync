@@ -2,8 +2,10 @@
 
 namespace GuiLabs.FileUtilities
 {
-    public class Files
+    public static class Files
     {
+        private const FileOptions FileFlagNoBuffering = (FileOptions)0x20000000;
+
         /// <summary>
         /// Assumes both files already exist.
         /// </summary>
@@ -21,8 +23,8 @@ namespace GuiLabs.FileUtilities
             byte[] buffer1 = new byte[bufferSize];
             byte[] buffer2 = new byte[bufferSize];
 
-            using (var stream1 = new FileStream(filePath1, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, FileOptions.SequentialScan))
-            using (var stream2 = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, FileOptions.SequentialScan))
+            using (var stream1 = new FileStream(filePath1, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, FileOptions.SequentialScan | FileFlagNoBuffering))
+            using (var stream2 = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, FileOptions.SequentialScan | FileFlagNoBuffering))
             {
                 while (stream1.Position < stream1.Length)
                 {
