@@ -35,7 +35,7 @@ namespace GuiLabs.Common
                 b = ((byte)(bytes[i] >> 4));
                 c[i * 2] = (char)(b > 9 ? b + 87 : b + 0x30);
                 b = ((byte)(bytes[i] & 0xF));
-                c[i * 2 + 1] = (char)(b > 9 ? b + 87 : b + 0x30);
+                c[(i * 2) + 1] = (char)(b > 9 ? b + 87 : b + 0x30);
             }
 
             return new string(c);

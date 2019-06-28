@@ -5,12 +5,12 @@ namespace GuiLabs.FileUtilities
 {
     public class FolderDiffResults
     {
-        public IEnumerable<string> LeftOnlyFiles { get; private set; }
-        public IEnumerable<string> LeftOnlyFolders { get; private set; }
-        public IEnumerable<string> IdenticalFiles { get; private set; }
-        public IEnumerable<string> ChangedFiles { get; private set; }
-        public IEnumerable<string> RightOnlyFiles { get; private set; }
-        public IEnumerable<string> RightOnlyFolders { get; private set; }
+        public IEnumerable<string> LeftOnlyFiles { get; }
+        public IEnumerable<string> LeftOnlyFolders { get; }
+        public IEnumerable<string> IdenticalFiles { get; }
+        public IEnumerable<string> ChangedFiles { get; }
+        public IEnumerable<string> RightOnlyFiles { get; }
+        public IEnumerable<string> RightOnlyFolders { get; }
 
         public FolderDiffResults(
             IEnumerable<string> leftOnlyFiles,
@@ -33,11 +33,11 @@ namespace GuiLabs.FileUtilities
             get
             {
                 return
-                    !LeftOnlyFiles.Any() &&
-                    !RightOnlyFiles.Any() &&
-                    !ChangedFiles.Any() &&
-                    !LeftOnlyFolders.Any() &&
-                    !RightOnlyFolders.Any();
+                    !LeftOnlyFiles.Any()
+                    && !RightOnlyFiles.Any()
+                    && !ChangedFiles.Any()
+                    && !LeftOnlyFolders.Any()
+                    && !RightOnlyFolders.Any();
             }
         }
     }

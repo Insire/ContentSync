@@ -2,16 +2,18 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using static GuiLabs.Common.Utilities;
 
 namespace GuiLabs.FileUtilities
 {
-    public class Sync
+    public static class Sync
     {
         /// <summary>
         /// Assumes source directory exists. destination may or may not exist.
         /// </summary>
-        public static void Directories(string source, string destination, Arguments arguments, Log log)
+        public static async Task Directories(string source, string destination, Arguments arguments, Log log, CancellationToken token)
         {
             if (!Directory.Exists(destination))
             {
@@ -21,16 +23,18 @@ namespace GuiLabs.FileUtilities
             source = Paths.TrimSeparator(source);
             destination = Paths.TrimSeparator(destination);
 
-            var diff = Folders.DiffFolders(
+            var diff = await Folders.DiffFolders(
                 source,
                 destination,
                 arguments.Pattern,
                 log,
+                token,
                 recursive: !arguments.Nonrecursive,
                 compareContents:
-                    arguments.UpdateChangedFiles ||
-                    arguments.DeleteChangedFiles ||
-                    arguments.DeleteSameFiles);
+                    arguments.UpdateChangedFiles
+                    || arguments.DeleteChangedFiles
+                    || arguments.DeleteSameFiles,
+                arguments.RespectLastAccessDateTime).ConfigureAwait(false);
 
             bool changesMade = false;
             int filesFailedToCopy = 0;
@@ -310,13 +314,15 @@ namespace GuiLabs.FileUtilities
             // if there were no errors, delete the cache of the folder contents. Otherwise
             // chances are they're going to restart the process, so we might needs the cache
             // next time.
-            if (filesFailedToCopy == 0 &&
-                filesFailedToDelete == 0 &&
-                foldersFailedToCreate == 0 &&
-                foldersFailedToDelete == 0)
+            if (filesFailedToCopy == 0
+                && filesFailedToDelete == 0
+                && foldersFailedToCreate == 0
+                && foldersFailedToDelete == 0)
             {
                 DirectoryContentsCache.ClearWrittenFilesFromCache();
             }
+
+            log.PrintFinalReport();
         }
 
         /// <summary>
