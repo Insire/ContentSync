@@ -4,7 +4,7 @@ using System.IO;
 
 namespace GuiLabs.FileUtilities
 {
-    public class FileSystem
+    public static class FileSystem
     {
         public static bool CopyFile(string source, string destination, bool speculative, Log log)
         {

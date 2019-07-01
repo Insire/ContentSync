@@ -8,12 +8,12 @@ namespace GuiLabs.FileUtilities
 {
     /// <summary>
     /// For large remote folders it can take hours just to enumerate the contents of the remote folder.
-    /// For unreliable connections restarting ContentSync will require re-reading the contents from 
+    /// For unreliable connections restarting ContentSync will require re-reading the contents from
     /// scratch again. To avoid this repeated cost, once the contents of the remote folder have been read
     /// we flush it to disk. If at any time after that ContentSync encounters errors, the cache will persist
     /// until ContentSync is invoked next time. However upon successful completion the cache is cleared.
     /// </summary>
-    public class DirectoryContentsCache
+    public static class DirectoryContentsCache
     {
         private static readonly string cacheRootFolder = Path.Combine(Path.GetTempPath(), "ContentSync");
         private static readonly HashSet<string> filesWritten = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -25,8 +25,7 @@ namespace GuiLabs.FileUtilities
                 return false;
             }
 
-            string fileListFilePath, folderListFilePath;
-            GetCacheFilePaths(rootFolder, pattern, out fileListFilePath, out folderListFilePath);
+            GetCacheFilePaths(rootFolder, pattern, out string fileListFilePath, out string folderListFilePath);
 
             if (!File.Exists(fileListFilePath) || !File.Exists(folderListFilePath))
             {
@@ -59,8 +58,7 @@ namespace GuiLabs.FileUtilities
             }
 
             Directory.CreateDirectory(cacheRootFolder);
-            string fileListFilePath, folderListFilePath;
-            GetCacheFilePaths(rootFolder, pattern, out fileListFilePath, out folderListFilePath);
+            GetCacheFilePaths(rootFolder, pattern, out string fileListFilePath, out string folderListFilePath);
             File.WriteAllLines(fileListFilePath, files.OrderBy(s => s, StringComparer.OrdinalIgnoreCase));
             File.WriteAllLines(folderListFilePath, folders.OrderBy(s => s, StringComparer.OrdinalIgnoreCase));
             filesWritten.Add(fileListFilePath);
