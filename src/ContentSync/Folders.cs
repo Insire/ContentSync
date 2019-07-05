@@ -16,47 +16,41 @@ namespace GuiLabs.FileUtilities
         /// <summary>
         /// Assumes leftRoot is an existing folder. rightRoot may not exist if operating in speculative mode.
         /// </summary>
-        public static async Task<FolderDiffResults> DiffFolders(
+        public static FolderDiffResults DiffFolders(
             string leftRoot,
             string rightRoot,
-            string pattern,
             Log log,
             CancellationToken token,
-            bool recursive = true,
             bool compareContents = true,
             bool respectDate = true)
         {
-            var leftRelativePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var leftOnlyFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var leftRelativePaths = new ConcurrentBag<string>();
+
             using (log.MeasureTime("Scanning source directory"))
             {
-                GetRelativePathsOfAllFiles(leftRoot, pattern, recursive, leftRelativePaths, leftOnlyFolders);
+                GetRelativePathsOfAllFiles(leftRoot, leftRelativePaths, token);
             }
 
-            var rightRelativePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var rightOnlyFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var rightRelativePaths = new ConcurrentBag<string>();
+
             if (Directory.Exists(rightRoot))
             {
                 using (log.MeasureTime("Scanning destination directory"))
                 {
-                    GetRelativePathsOfAllFiles(rightRoot, pattern, recursive, rightRelativePaths, rightOnlyFolders);
+                    GetRelativePathsOfAllFiles(rightRoot, rightRelativePaths, token);
                 }
             }
 
-            var leftOnlyFiles = new ConcurrentBag<string>();
-            var identicalFiles = new ConcurrentBag<string>();
-            var changedFiles = new ConcurrentBag<string>();
-            var rightOnlyFiles = new ConcurrentDictionary<string, string>(rightRelativePaths.Select(p => new KeyValuePair<string, string>(p, p)), StringComparer.OrdinalIgnoreCase);
-
-            var commonFolders = leftOnlyFolders.Intersect(rightOnlyFolders, StringComparer.OrdinalIgnoreCase).ToArray();
-            leftOnlyFolders.ExceptWith(commonFolders);
-            rightOnlyFolders.ExceptWith(commonFolders);
+            var leftOnlyFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var identicalFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var changedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var rightOnlyFiles = new HashSet<string>(rightRelativePaths, StringComparer.OrdinalIgnoreCase);
 
             using (log.MeasureTime("Comparing"))
             {
-                await leftRelativePaths
-                    .ForEachAsync(left => Task.Run(() => AnalyzeFile(left), token), Environment.ProcessorCount * 2)
-                    .ConfigureAwait(false);
+                leftRelativePaths
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ForEach(AnalyzeFile);
             }
 
             using (log.MeasureTime("Sorting"))
@@ -74,9 +68,7 @@ namespace GuiLabs.FileUtilities
                     leftOnlyFilesList,
                     identicalFilesList,
                     changedFilesList,
-                    rightOnlyFiles.Select(p => p.Key).OrderBy(s => s).ToArray(),
-                    leftOnlyFolders.OrderBy(s => s).ToArray(),
-                    rightOnlyFolders.OrderBy(s => s).ToArray());
+                    rightOnlyFiles.OrderBy(s => s).ToArray());
             }
 
             void AnalyzeFile(string path)
@@ -116,42 +108,27 @@ namespace GuiLabs.FileUtilities
                     leftOnlyFiles.Add(path);
                 }
 
-                rightOnlyFiles.TryRemove(path, out _);
+                rightOnlyFiles.Remove(path);
             }
         }
 
         private static readonly FieldInfo pathField = typeof(FileSystemInfo).GetField("FullPath", BindingFlags.Instance | BindingFlags.NonPublic);
 
-        public static void GetRelativePathsOfAllFiles(string rootFolder, string pattern, bool recursive, HashSet<string> files, HashSet<string> folders)
+        private static void GetRelativePathsOfAllFiles(string rootFolder, ConcurrentBag<string> files, CancellationToken token)
         {
-            // don't go through the cache for non-recursive case
-            if (recursive && DirectoryContentsCache.TryReadFromCache(rootFolder, pattern, files, folders))
-            {
-                return;
-            }
-
             var rootDirectoryInfo = new DirectoryInfo(rootFolder);
             var prefixLength = rootFolder.Length;
-            var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
 
-            foreach (var fileSystemInfo in rootDirectoryInfo.EnumerateFileSystemInfos(pattern, searchOption))
+            Parallel.ForEach(rootDirectoryInfo.GetFiles("*", SearchOption.TopDirectoryOnly), fileSystemInfo =>
             {
+                if (token.IsCancellationRequested)
+                    return;
+
                 string relativePath = (string)pathField.GetValue(fileSystemInfo);
                 relativePath = relativePath.Substring(prefixLength);
-                if (fileSystemInfo is FileInfo)
-                {
-                    files.Add(relativePath);
-                }
-                else if (recursive)
-                {
-                    folders.Add(relativePath);
-                }
-            }
 
-            if (recursive)
-            {
-                DirectoryContentsCache.SaveToCache(rootFolder, pattern, files, folders);
-            }
+                files.Add(relativePath);
+            });
         }
     }
 }

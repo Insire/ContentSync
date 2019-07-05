@@ -6,112 +6,84 @@ namespace GuiLabs.FileUtilities
 {
     public static class FileSystem
     {
-        public static bool CopyFile(string source, string destination, bool speculative, Log log)
+        public static bool CopyFile(string source, string destination, Log log)
         {
-            if (speculative)
+            var destinationFolder = Path.GetDirectoryName(destination);
+
+            try
             {
-                log.WriteLine($"Would copy {source} to {destination}");
+                if (!string.IsNullOrEmpty(destinationFolder))
+                {
+                    Directory.CreateDirectory(destinationFolder);
+                }
+
+                File.Copy(source, destination, overwrite: true);
+                log.WriteLine($"Copy {source} to {destination}");
             }
-            else
+            catch (Exception ex)
             {
-                var destinationFolder = Path.GetDirectoryName(destination);
-
-                try
-                {
-                    if (!string.IsNullOrEmpty(destinationFolder))
-                    {
-                        Directory.CreateDirectory(destinationFolder);
-                    }
-
-                    File.Copy(source, destination, overwrite: true);
-                    log.WriteLine($"Copy {source} to {destination}");
-                }
-                catch (Exception ex)
-                {
-                    log.WriteError($"Unable to copy {source} to {destination}: {ex.Message}");
-                    return false;
-                }
+                log.WriteError($"Unable to copy {source} to {destination}: {ex.Message}");
+                return false;
             }
 
             return true;
         }
 
-        public static bool DeleteFile(string deletedFilePath, bool speculative, Log log)
+        public static bool DeleteFile(string deletedFilePath, Log log)
         {
-            if (speculative)
+            try
             {
-                log.WriteLine("Would delete " + deletedFilePath);
+                // this can happen if the directory contents cache is out-of-date
+                if (!File.Exists(deletedFilePath))
+                {
+                    return true;
+                }
+
+                var attributes = File.GetAttributes(deletedFilePath);
+                if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                {
+                    File.SetAttributes(deletedFilePath, attributes & ~FileAttributes.ReadOnly);
+                }
+
+                File.Delete(deletedFilePath);
+                log.WriteLine("Delete " + deletedFilePath);
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    // this can happen if the directory contents cache is out-of-date
-                    if (!File.Exists(deletedFilePath))
-                    {
-                        return true;
-                    }
-
-                    var attributes = File.GetAttributes(deletedFilePath);
-                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                    {
-                        File.SetAttributes(deletedFilePath, attributes & ~FileAttributes.ReadOnly);
-                    }
-
-                    File.Delete(deletedFilePath);
-                    log.WriteLine("Delete " + deletedFilePath);
-                }
-                catch (Exception ex)
-                {
-                    log.WriteError($"Unable to delete file {deletedFilePath}: {ex.Message}");
-                    return false;
-                }
+                log.WriteError($"Unable to delete file {deletedFilePath}: {ex.Message}");
+                return false;
             }
 
             return true;
         }
 
-        public static bool CreateDirectory(string newFolder, bool speculative, Log log)
+        public static bool CreateDirectory(string newFolder, Log log)
         {
-            if (speculative)
+            try
             {
-                log.WriteLine("Would create " + newFolder);
+                Directory.CreateDirectory(newFolder);
+                log.WriteLine("Create " + newFolder);
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    Directory.CreateDirectory(newFolder);
-                    log.WriteLine("Create " + newFolder);
-                }
-                catch (Exception ex)
-                {
-                    log.WriteError($"Unable to create directory {newFolder}: {ex.Message}");
-                    return false;
-                }
+                log.WriteError($"Unable to create directory {newFolder}: {ex.Message}");
+                return false;
             }
 
             return true;
         }
 
-        public static bool DeleteDirectory(string deletedFolderPath, bool speculative, Log log)
+        public static bool DeleteDirectory(string deletedFolderPath, Log log)
         {
-            if (speculative)
+            try
             {
-                log.WriteLine("Would delete " + deletedFolderPath);
+                Directory.Delete(deletedFolderPath, recursive: true);
+                log.WriteLine("Delete " + deletedFolderPath);
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    Directory.Delete(deletedFolderPath, recursive: true);
-                    log.WriteLine("Delete " + deletedFolderPath);
-                }
-                catch (Exception ex)
-                {
-                    log.WriteError($"Unable to delete directory {deletedFolderPath}: {ex.Message}");
-                    return false;
-                }
+                log.WriteError($"Unable to delete directory {deletedFolderPath}: {ex.Message}");
+                return false;
             }
 
             return true;
