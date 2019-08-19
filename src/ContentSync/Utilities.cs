@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -26,15 +26,15 @@ namespace GuiLabs.Common
 
         public static string ByteArrayToHexString(byte[] bytes)
         {
-            int digits = bytes.Length * 2;
+            var digits = bytes.Length * 2;
 
-            char[] c = new char[digits];
+            var c = new char[digits];
             byte b;
-            for (int i = 0; i < digits / 2; i++)
+            for (var i = 0; i < digits / 2; i++)
             {
-                b = ((byte)(bytes[i] >> 4));
+                b = (byte)(bytes[i] >> 4);
                 c[i * 2] = (char)(b > 9 ? b + 87 : b + 0x30);
-                b = ((byte)(bytes[i] & 0xF));
+                b = (byte)(bytes[i] & 0xF);
                 c[(i * 2) + 1] = (char)(b > 9 ? b + 87 : b + 0x30);
             }
 
