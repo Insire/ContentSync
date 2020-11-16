@@ -1,4 +1,4 @@
-﻿using FS.Sync;
+using FS.Sync;
 using MvvmScarletToolkit;
 using System;
 using System.Collections.Concurrent;
@@ -124,7 +124,7 @@ namespace GuiLabs.FileUtilities
                 if (token.IsCancellationRequested)
                     return;
 
-                string relativePath = (string)pathField.GetValue(fileSystemInfo);
+                var relativePath = (string)pathField.GetValue(fileSystemInfo);
                 relativePath = relativePath.Substring(prefixLength);
 
                 files.Add(relativePath);
